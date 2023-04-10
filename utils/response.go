@@ -1,11 +1,24 @@
 package utils
 
-import "github.com/gin-gonic/gin"
+import (
+	"errors"
 
-func FormatResult(code int, data interface{}, message string) gin.H {
+	"github.com/gin-gonic/gin"
+)
+
+var ErrNotFound = errors.New("not found")
+
+func ApiSuccessResponse(data interface{}) gin.H {
+	return gin.H{
+		"code":    200,
+		"data":    data,
+		"message": "success",
+	}
+}
+func ApiErrorResponse(code int, message string) gin.H {
 	return gin.H{
 		"code":    code,
-		"data":    data,
+		"data":    nil,
 		"message": message,
 	}
 }

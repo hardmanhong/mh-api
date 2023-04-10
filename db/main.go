@@ -1,28 +1,20 @@
 package db
 
 import (
-	"database/sql"
 	"fmt"
 
-	"github.com/gin-gonic/gin"
-	_ "github.com/go-sql-driver/mysql"
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
-func Init() {
-	// 连接 MySQL 数据库
-	db, err := sql.Open("mysql", "user:password@tcp(127.0.0.1:3306)/dbname?charset=utf8mb4")
-	if err != nil {
-		fmt.Println("Failed to connect to MySQL:", err)
-		return
-	}
-	defer db.Close() // 延迟关闭数据库连接
+var DB *gorm.DB
 
-	// Gin 框架示例代码
-	router := gin.Default()
-	router.GET("/", func(c *gin.Context) {
-		c.JSON(200, gin.H{
-			"message": "Hello, world!",
-		})
-	})
-	router.Run(":8080")
+func init() {
+	dsn := "root:root@tcp(127.0.0.1:3306)/mh?charset=utf8mb4&parseTime=True&loc=Local"
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println("Connected to database!")
+	DB = db
 }

@@ -9,22 +9,17 @@ import (
 )
 
 type GoodsController struct {
-	goodsDao GoodsDAO
+	dao GoodsDAO
 }
 
 func (controller *GoodsController) GetList(ctx *gin.Context) {
-	pageSizeStr := ctx.Query("pageSize")
-	pageStr := ctx.Query("page")
-	pageSize, err := strconv.Atoi(pageSizeStr)
-	if err != nil || pageSize <= 0 {
-		pageSize = 10
-	}
-	page, err := strconv.Atoi(pageStr)
-	if err != nil || page <= 0 {
-		page = 1
-	}
-
-	result, err := controller.goodsDao.GetList(page, pageSize)
+	name := ctx.Query("name")
+	page, pageSize := utils.GetPaginationParams(ctx)
+	result, err := controller.dao.GetList(&ListQuery{
+		Name:     name,
+		Page:     page,
+		PageSize: pageSize,
+	})
 	if err != nil {
 		res := utils.ApiErrorResponse(-1, err.Error())
 		ctx.JSON(http.StatusInternalServerError, res)
@@ -45,7 +40,7 @@ func (controller *GoodsController) GetItem(ctx *gin.Context) {
 	}
 
 	// 调用 DAO 层获取商品
-	goods, err := controller.goodsDao.GetItem(id)
+	goods, err := controller.dao.GetItem(id)
 	if err != nil {
 		res = utils.ApiErrorResponse(-1, "Failed to get item")
 		ctx.JSON(http.StatusInternalServerError, res)
@@ -71,7 +66,7 @@ func (controller *GoodsController) Create(ctx *gin.Context) {
 		return
 	}
 
-	err = controller.goodsDao.Create(&goods)
+	err = controller.dao.Create(&goods)
 	if err != nil {
 		res = utils.ApiErrorResponse(-1, err.Error())
 		ctx.JSON(http.StatusInternalServerError, res)
@@ -98,7 +93,7 @@ func (controller *GoodsController) Update(ctx *gin.Context) {
 	}
 
 	// 检查记录是否存在
-	exists, err := controller.goodsDao.Exists(id)
+	exists, err := controller.dao.Exists(id)
 	if err != nil {
 		res = utils.ApiErrorResponse(-1, err.Error())
 		ctx.JSON(http.StatusInternalServerError, res)
@@ -110,7 +105,7 @@ func (controller *GoodsController) Update(ctx *gin.Context) {
 		return
 	}
 
-	if err := controller.goodsDao.Update(id, &req); err != nil {
+	if err := controller.dao.Update(id, &req); err != nil {
 		res = utils.ApiErrorResponse(-1, err.Error())
 		ctx.JSON(http.StatusInternalServerError, res)
 		return
@@ -124,7 +119,7 @@ func (controller *GoodsController) Delete(ctx *gin.Context) {
 		return
 	}
 
-	err = controller.goodsDao.Delete(id)
+	err = controller.dao.Delete(id)
 	if err != nil {
 		ctx.JSON(http.StatusInternalServerError, utils.ApiErrorResponse(-1, err.Error()))
 		return

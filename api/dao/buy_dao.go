@@ -97,5 +97,5 @@ func (dao *BuyDAO) Delete(id uint64) error {
 }
 
 func (dao *BuyDAO) UpdateBuyWhenSell(id uint64, buy *models.BuyUpdateProfit) error {
-	return dao.db.Model(&models.Buy{}).Where("id = ?", id).UpdateColumns(buy).Error
+	return dao.db.Model(&models.Buy{}).Where("id = ?", id).Update("inventory", buy.Inventory).Update("total_profit", buy.TotalProfit).Error
 }

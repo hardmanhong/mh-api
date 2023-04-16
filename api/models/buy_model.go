@@ -7,6 +7,7 @@ type Buy struct {
 	Price       float64   `json:"price" gorm:"type:decimal(10,2)"`
 	Quantity    int       `json:"quantity" gorm:"column:quantity"`
 	Inventory   int       `json:"inventory"`
+	TotalAmount float64   `json:"totalAmount" gorm:"column:total_amount"`
 	TotalProfit float64   `json:"totalProfit" gorm:"column:total_profit"`
 	CreatedAt   time.Time `json:"createdAt" gorm:"autoCreateTime"`
 	UpdatedAt   time.Time `json:"updatedAt" gorm:"autoUpdateTime"`
@@ -36,6 +37,7 @@ type BuyListQuery struct {
 }
 
 type BuyListResponse struct {
+	TotalAmount float64 `json:"totalAmount"`
 	TotalProfit float64 `json:"totalProfit"`
 	PaginationResponse
 }

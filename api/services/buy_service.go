@@ -39,6 +39,7 @@ func (s *buyService) GetItem(id uint64) (*models.Buy, error) {
 }
 
 func (s *buyService) Create(buy *models.Buy) (*models.Buy, error) {
+	buy.TotalAmount = buy.Price * float64(buy.Quantity)
 	buy, err := s.dao.Create(buy)
 	if err != nil {
 		return nil, err

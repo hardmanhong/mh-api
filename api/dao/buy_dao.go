@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 
 	"github.com/hardmanhong/api/models"
 	"gorm.io/gorm"
@@ -47,15 +48,18 @@ func (dao *BuyDAO) GetList(query *models.BuyListQuery) (*models.BuyListResponse,
 		return nil, err
 	}
 	offset := (query.Page - 1) * query.PageSize
-	err = tx.Order("created_at asc").Offset(offset).Limit(query.PageSize).Find(&buyList).Error
+	err = tx.Order("created_at desc").Offset(offset).Limit(query.PageSize).Find(&buyList).Error
 	if err != nil {
 		return nil, err
 	}
 	response.Total = total
 	for _, g := range buyList {
+		response.TotalAmount += g.TotalAmount
 		response.TotalProfit += g.TotalProfit
 		response.List = append(response.List, g)
 	}
+	response.TotalAmount, _ = strconv.ParseFloat(fmt.Sprintf("%.2f", response.TotalAmount), 64)
+	response.TotalProfit, _ = strconv.ParseFloat(fmt.Sprintf("%.2f", response.TotalProfit), 64)
 	return &response, nil
 }
 

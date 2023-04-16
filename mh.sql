@@ -26,12 +26,13 @@ CREATE TABLE IF NOT EXISTS `buy` (
   `inventory` int DEFAULT '0',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `remark` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `total_profit` decimal(10,2) DEFAULT NULL COMMENT '总利润',
+  `total_amount` decimal(10,2) DEFAULT NULL COMMENT '买入总金额',
   PRIMARY KEY (`id`),
   KEY `fk_goods_id` (`goods_id`),
   CONSTRAINT `fk_goods_id` FOREIGN KEY (`goods_id`) REFERENCES `goods` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 数据导出被取消选择。
 
@@ -44,7 +45,7 @@ CREATE TABLE IF NOT EXISTS `goods` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 数据导出被取消选择。
 
@@ -57,7 +58,7 @@ CREATE TABLE IF NOT EXISTS `sell` (
   `quantity` int NOT NULL DEFAULT '0' COMMENT '卖出数量',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `remark` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `profit` decimal(10,2) DEFAULT NULL,
   `total_profit` decimal(10,2) DEFAULT NULL,
   PRIMARY KEY (`id`),
@@ -65,7 +66,7 @@ CREATE TABLE IF NOT EXISTS `sell` (
   KEY `fk_sell_goods` (`goods_id`) USING BTREE,
   CONSTRAINT `fk_buy_id` FOREIGN KEY (`buy_id`) REFERENCES `buy` (`id`),
   CONSTRAINT `fk_sell_goods` FOREIGN KEY (`goods_id`) REFERENCES `goods` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 数据导出被取消选择。
 

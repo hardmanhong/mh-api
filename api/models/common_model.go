@@ -2,7 +2,7 @@ package models
 
 type PaginationQuery struct {
 	Page     int `json:"page"`
-	PageSize int `json:"page_size"`
+	PageSize int `json:"pageSize"`
 }
 
 type PaginationResponse struct {

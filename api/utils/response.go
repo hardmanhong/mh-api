@@ -2,23 +2,27 @@ package utils
 
 import (
 	"errors"
-
-	"github.com/gin-gonic/gin"
 )
 
 var ErrNotFound = errors.New("not found")
 
-func ApiSuccessResponse(data interface{}) gin.H {
-	return gin.H{
-		"code":    200,
-		"data":    data,
-		"message": "success",
+type ApiResponse struct {
+	Code    int         `json:"code"`
+	Data    interface{} `json:"data"`
+	Message string      `json:"message"`
+}
+
+func ApiSuccessResponse(data interface{}) ApiResponse {
+	return ApiResponse{
+		Code:    200,
+		Data:    data,
+		Message: "success",
 	}
 }
-func ApiErrorResponse(code int, message string) gin.H {
-	return gin.H{
-		"code":    code,
-		"data":    nil,
-		"message": message,
+func ApiErrorResponse(code int, message string) ApiResponse {
+	return ApiResponse{
+		Code:    code,
+		Data:    nil,
+		Message: message,
 	}
 }

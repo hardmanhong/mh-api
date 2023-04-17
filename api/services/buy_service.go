@@ -3,15 +3,16 @@ package services
 import (
 	"github.com/hardmanhong/api/dao"
 	"github.com/hardmanhong/api/models"
+	"github.com/hardmanhong/api/utils"
 )
 
 type BuyService interface {
-	GetList(query *models.BuyListQuery) (*models.BuyListResponse, error)
-	GetItem(id uint64) (*models.Buy, error)
-	Create(buy *models.Buy) (*models.Buy, error)
+	GetList(query *models.BuyListQuery) utils.ApiResponse
+	GetItem(id uint64) utils.ApiResponse
+	Create(buy *models.Buy) utils.ApiResponse
 	Exists(id uint64) (bool, error)
-	Update(id uint64, buy *models.BuyUpdate) error
-	Delete(id uint64) error
+	Update(id uint64, buy *models.BuyUpdate) utils.ApiResponse
+	Delete(id uint64) utils.ApiResponse
 }
 
 type buyService struct {
@@ -22,42 +23,75 @@ func NewBuyService(dao *dao.BuyDAO) *buyService {
 	return &buyService{dao}
 }
 
-func (s *buyService) GetList(query *models.BuyListQuery) (*models.BuyListResponse, error) {
-	resp, err := s.dao.GetList(query)
+func (s *buyService) GetList(query *models.BuyListQuery) utils.ApiResponse {
+	res, err := s.dao.GetList(query)
 	if err != nil {
-		return nil, err
+		return utils.ApiErrorResponse(-1, err.Error())
 	}
-	return resp, nil
+	return utils.ApiSuccessResponse(res)
 }
 
-func (s *buyService) GetItem(id uint64) (*models.Buy, error) {
-	buy, err := s.dao.GetItem(id)
+func (s *buyService) GetItem(id uint64) utils.ApiResponse {
+	item, err := s.dao.GetItem(id)
 	if err != nil {
-		return nil, err
+		return utils.ApiErrorResponse(-1, "Failed to get item")
 	}
-	return buy, nil
+	// 返回结果
+	if item == nil {
+		return utils.ApiErrorResponse(-1, "Item not found")
+	}
+	return utils.ApiSuccessResponse(&item)
 }
 
-func (s *buyService) Create(buy *models.Buy) (*models.Buy, error) {
+func (s *buyService) Create(buy *models.Buy) utils.ApiResponse {
 	buy.TotalAmount = buy.Price * float64(buy.Quantity)
 	buy, err := s.dao.Create(buy)
 	if err != nil {
-		return nil, err
+		return utils.ApiErrorResponse(-1, err.Error())
 	}
-	return buy, nil
+	return utils.ApiSuccessResponse(buy)
 }
 func (s *buyService) Exists(id uint64) (bool, error) {
 	return s.dao.Exists(id)
 }
 
-func (s *buyService) Update(id uint64, buy *models.BuyUpdate) error {
-	return s.dao.Update(id, buy)
+func (s *buyService) Update(id uint64, buy *models.BuyUpdate) utils.ApiResponse {
+	exists, err := s.Exists(id)
+	if err != nil {
+		return utils.ApiErrorResponse(-1, err.Error())
+	}
+	if !exists {
+		return utils.ApiErrorResponse(404, "记录不存在")
+	}
+	buyItem, err := s.dao.GetItem(id)
+	if err != nil {
+		return utils.ApiErrorResponse(-1, err.Error())
+	}
+	if buyItem.HasSold == 0 {
+		buy.Inventory = buy.Quantity
+	} else {
+		// 已有卖出记录时
+		if buy.Quantity < buyItem.Inventory {
+			return utils.ApiErrorResponse(-1, "已有卖出记录，买入数量不能小于库存")
+		}
+		soldQuantity := buyItem.Quantity - buyItem.Inventory
+		buy.Inventory = buy.Quantity - soldQuantity
+	}
+	err = s.dao.Update(id, buy)
+	if err != nil {
+		return utils.ApiErrorResponse(-1, err.Error())
+	}
+	return utils.ApiSuccessResponse(nil)
 }
 
-func (s *buyService) Delete(id uint64) error {
-	return s.dao.Delete(id)
+func (s *buyService) Delete(id uint64) utils.ApiResponse {
+	err := s.dao.Delete(id)
+	if err != nil {
+		return utils.ApiErrorResponse(-1, err.Error())
+	}
+	return utils.ApiSuccessResponse(nil)
 }
-func (s *buyService) UpdateInventory(buy *models.Buy, inventory int) error {
+func (s *buyService) UpdateInventory(buy *models.Buy, inventory int) utils.ApiResponse {
 	db := s.dao.GetDB()
 	tx := db.Begin()
 	defer func() {
@@ -70,14 +104,14 @@ func (s *buyService) UpdateInventory(buy *models.Buy, inventory int) error {
 	err := db.Save(buy).Error
 	if err != nil {
 		tx.Rollback()
-		return err
+		return utils.ApiErrorResponse(-1, err.Error())
 	}
 
 	err = tx.Commit().Error
 	if err != nil {
 		tx.Rollback()
-		return err
+		return utils.ApiErrorResponse(-1, err.Error())
 	}
 
-	return nil
+	return utils.ApiSuccessResponse(nil)
 }

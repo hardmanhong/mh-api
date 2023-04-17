@@ -66,8 +66,20 @@ func (dao *GoodsDAO) GetItem(id uint64) (*models.Goods, error) {
 	}
 	return &goods, nil
 }
-func (dao *GoodsDAO) Create(goods *models.Goods) error {
-	return dao.db.Create(goods).Error
+func (dao *GoodsDAO) Create(goods *models.Goods) (*models.Goods, error) {
+	err := dao.db.Create(goods).Error
+	if err != nil {
+		return nil, err
+	}
+	return goods, err
+}
+func (dao *GoodsDAO) ExistsByName(name string) (bool, error) {
+	var count int64
+	err := dao.db.Model(&models.Goods{}).Where("name = ?", name).Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }
 func (dao *GoodsDAO) Exists(id uint64) (bool, error) {
 	var count int64

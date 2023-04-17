@@ -48,6 +48,12 @@ func (dao *BuyDAO) GetList(query *models.BuyListQuery) (*models.BuyListResponse,
 		return nil, err
 	}
 	offset := (query.Page - 1) * query.PageSize
+	inventorySorter := query.InventorySorter
+	if inventorySorter == "asc" {
+		tx = tx.Order("inventory asc")
+	} else if inventorySorter == "desc" {
+		tx = tx.Order("inventory desc")
+	}
 	err = tx.Order("created_at desc").Offset(offset).Limit(query.PageSize).Find(&buyList).Error
 	if err != nil {
 		return nil, err
@@ -101,5 +107,5 @@ func (dao *BuyDAO) Delete(id uint64) error {
 }
 
 func (dao *BuyDAO) UpdateBuyWhenSell(id uint64, buy *models.BuyUpdateProfit) error {
-	return dao.db.Model(&models.Buy{}).Where("id = ?", id).Update("inventory", buy.Inventory).Update("total_profit", buy.TotalProfit).Error
+	return dao.db.Model(&models.Buy{}).Where("id = ?", id).Update("has_sold", 1).Update("inventory", buy.Inventory).Update("total_profit", buy.TotalProfit).Error
 }

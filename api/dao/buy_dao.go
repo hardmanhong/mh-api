@@ -32,7 +32,7 @@ func CalculateDateRange(t time.Time, dType string) (time.Time, time.Time) {
 	case "month":
 		return t.AddDate(0, -11, 0), t
 	case "year":
-		return t.AddDate(-2, 0, 0), t
+		return t.AddDate(-3, 0, 0), t
 	default:
 		return t.AddDate(0, -1, 0), t
 	}
@@ -46,9 +46,9 @@ func GroupByTimeDimension(dType string) string {
 	case "week":
 		return "YEARWEEK(created_at)"
 	case "month":
-		return "DATE_FORMAT(created_at, '%Y-%m')"
+		return "DATE(created_at)"
 	case "year":
-		return "YEAR(created_at)"
+		return "DATE(created_at)"
 	default:
 		return "DATE(created_at)"
 	}
@@ -58,6 +58,10 @@ func (dao *BuyDAO) GetProfit(dType string) ([]models.BuyProfit, error) {
 		return dao.GetProfitByDay()
 	} else if dType == "week" {
 		return dao.GetProfitByWeek()
+	} else if dType == "month" {
+		return dao.GetProfitByMonth()
+	} else if dType == "year" {
+		return dao.GetProfitByYear()
 	}
 	return []models.BuyProfit{}, nil
 
@@ -131,7 +135,79 @@ func (dao *BuyDAO) GetProfitByWeek() ([]models.BuyProfit, error) {
 	}
 	return list, nil
 }
+func (dao *BuyDAO) GetProfitByMonth() ([]models.BuyProfit, error) {
+	// 获取当前时间
+	now := time.Now()
+	// 计算时间范围
+	start, end := CalculateDateRange(now, "month")
+	// 分组字段
+	// groupBy := GroupByTimeDimension("month")
 
+	rows, err := dao.db.Table("buy").
+		Select("DATE_FORMAT(created_at, '%Y-%m') AS month, SUM(total_profit) AS total_profit").
+		Where("created_at BETWEEN ? AND ?", start, end).
+		Group("month").
+		Order("month").
+		Rows()
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []models.BuyProfit
+	for rows.Next() {
+		var label string
+		var value float64
+		if err := rows.Scan(&label, &value); err != nil {
+			return nil, err
+		}
+		// 2006-01-02 15:04:05 奇葩的格式
+		list = append(list, models.BuyProfit{Value: value, Label: label})
+	}
+
+	if len(list) == 0 {
+		// 如果没有数据则返回一个空的数组
+		return []models.BuyProfit{}, nil
+	}
+	return list, nil
+}
+func (dao *BuyDAO) GetProfitByYear() ([]models.BuyProfit, error) {
+	// 获取当前时间
+	now := time.Now()
+	// 计算时间范围
+	start, end := CalculateDateRange(now, "year")
+	// 分组字段
+
+	rows, err := dao.db.Table("buy").
+		Select("DATE_FORMAT(created_at, '%Y') AS year, SUM(total_profit) AS total_profit").
+		Where("created_at BETWEEN ? AND ?", start, end).
+		Group("year").
+		Order("year").
+		Rows()
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []models.BuyProfit
+	for rows.Next() {
+		var label string
+		var value float64
+		if err := rows.Scan(&label, &value); err != nil {
+			return nil, err
+		}
+		// 2006-01-02 15:04:05 奇葩的格式
+		list = append(list, models.BuyProfit{Value: value, Label: label})
+	}
+
+	if len(list) == 0 {
+		// 如果没有数据则返回一个空的数组
+		return []models.BuyProfit{}, nil
+	}
+	return list, nil
+}
 func (dao *BuyDAO) GetTotalProfit() (float64, error) {
 	var totalProfit float64
 	err := dao.db.Model(&models.Buy{}).Select("SUM(total_profit)").Pluck("SUM(total_profit)", &totalProfit).Error

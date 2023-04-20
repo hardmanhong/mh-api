@@ -7,6 +7,8 @@ import (
 )
 
 type BuyService interface {
+	GetProfit(dType string) utils.ApiResponse
+	GetTotalProfit() utils.ApiResponse
 	GetList(query *models.BuyListQuery) utils.ApiResponse
 	GetItem(id uint64) utils.ApiResponse
 	Create(buy *models.Buy) utils.ApiResponse
@@ -21,6 +23,22 @@ type buyService struct {
 
 func NewBuyService(dao *dao.BuyDAO) *buyService {
 	return &buyService{dao}
+}
+
+func (s *buyService) GetProfit(dType string) utils.ApiResponse {
+	res, err := s.dao.GetProfit(dType)
+	if err != nil {
+		return utils.ApiErrorResponse(-1, err.Error())
+	}
+	return utils.ApiSuccessResponse(res)
+}
+
+func (s *buyService) GetTotalProfit() utils.ApiResponse {
+	res, err := s.dao.GetTotalProfit()
+	if err != nil {
+		return utils.ApiErrorResponse(-1, err.Error())
+	}
+	return utils.ApiSuccessResponse(res)
 }
 
 func (s *buyService) GetList(query *models.BuyListQuery) utils.ApiResponse {

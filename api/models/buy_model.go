@@ -33,6 +33,7 @@ type BuyUpdateProfit struct {
 
 type BuyListQuery struct {
 	GoodsIDs        []uint64   `json:"goodsIds"`
+	HasSoldSorter   string     `json:"hasSoldSorter"`
 	InventorySorter string     `json:"inventorySorter"`
 	CreatedAtFrom   *time.Time `json:"createdAtFrom"`
 	CreatedAtTo     *time.Time `json:"createdAtTo"`
@@ -43,4 +44,9 @@ type BuyListResponse struct {
 	TotalAmount float64 `json:"totalAmount"`
 	TotalProfit float64 `json:"totalProfit"`
 	PaginationResponse
+}
+
+type BuyProfit struct {
+	Value float64 `json:"value"`
+	Label string  `json:"label"`
 }

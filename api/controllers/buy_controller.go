@@ -18,6 +18,17 @@ func NewBuyController(service services.BuyService) *BuyController {
 	return &BuyController{service: service}
 }
 
+func (controller *BuyController) GetProfit(ctx *gin.Context) {
+	dType := ctx.Query("type")
+	res := controller.service.GetProfit(dType)
+	ctx.JSON(http.StatusOK, res)
+}
+
+func (controller *BuyController) GetTotalProfit(ctx *gin.Context) {
+	res := controller.service.GetTotalProfit()
+	ctx.JSON(http.StatusOK, res)
+}
+
 func (controller *BuyController) GetList(ctx *gin.Context) {
 	page, pageSize := utils.GetPaginationParams(ctx)
 	// 解析日期参数
@@ -36,11 +47,14 @@ func (controller *BuyController) GetList(ctx *gin.Context) {
 		}
 	}
 	inventorySorter := ctx.Query("inventorySorter")
+	hasSoldSorter := ctx.Query("hasSoldSorter")
+
 	res := controller.service.GetList(&models.BuyListQuery{
 		CreatedAtFrom:   createdAtFrom,
 		CreatedAtTo:     createdAtTo,
 		GoodsIDs:        goodsIds,
 		InventorySorter: inventorySorter,
+		HasSoldSorter:   hasSoldSorter,
 		PaginationQuery: models.PaginationQuery{
 			Page:     page,
 			PageSize: pageSize,

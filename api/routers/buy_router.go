@@ -17,4 +17,6 @@ func NewBuyRouter(router *gin.RouterGroup, db *gorm.DB) {
 	router.POST("/buy", buyController.Create)
 	router.PUT("/buy/:id", buyController.Update)
 	router.DELETE("/buy/:id", buyController.Delete)
+	router.GET("/buy/profit", buyController.GetProfit)
+	router.GET("/buy/totalProfit", buyController.GetTotalProfit)
 }

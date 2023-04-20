@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/hardmanhong/api/models"
 	"gorm.io/gorm"
@@ -19,6 +20,125 @@ func NewBuyDAO(db *gorm.DB) *BuyDAO {
 }
 func (dao *BuyDAO) GetDB() *gorm.DB {
 	return dao.db
+}
+
+// 计算时间范围
+func CalculateDateRange(t time.Time, dType string) (time.Time, time.Time) {
+	switch dType {
+	case "day":
+		return t.AddDate(0, -1, 0), t
+	case "week":
+		return t.AddDate(0, 0, -30), t
+	case "month":
+		return t.AddDate(0, -11, 0), t
+	case "year":
+		return t.AddDate(-2, 0, 0), t
+	default:
+		return t.AddDate(0, -1, 0), t
+	}
+}
+
+// 按时间维度分组
+func GroupByTimeDimension(dType string) string {
+	switch dType {
+	case "day":
+		return "DATE(created_at)"
+	case "week":
+		return "YEARWEEK(created_at)"
+	case "month":
+		return "DATE_FORMAT(created_at, '%Y-%m')"
+	case "year":
+		return "YEAR(created_at)"
+	default:
+		return "DATE(created_at)"
+	}
+}
+func (dao *BuyDAO) GetProfit(dType string) ([]models.BuyProfit, error) {
+	if dType == "day" {
+		return dao.GetProfitByDay()
+	} else if dType == "week" {
+		return dao.GetProfitByWeek()
+	}
+	return []models.BuyProfit{}, nil
+
+}
+func (dao *BuyDAO) GetProfitByDay() ([]models.BuyProfit, error) {
+	// 获取当前时间
+	now := time.Now()
+	// 计算时间范围
+	start, end := CalculateDateRange(now, "day")
+	// 分组字段
+	groupBy := GroupByTimeDimension("day")
+
+	rows, err := dao.db.Table("buy").
+		Select(groupBy+" AS date, sum(total_profit) AS profit").
+		Where("created_at BETWEEN ? AND ?", start, end).
+		Group("date").
+		Order("date").
+		Rows()
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []models.BuyProfit
+	for rows.Next() {
+		var day time.Time
+		var value float64
+		if err := rows.Scan(&day, &value); err != nil {
+			return nil, err
+		}
+		// // 将日期转换为指定格式的字符串
+		label := day.Format("2006-01-02")
+		list = append(list, models.BuyProfit{Value: value, Label: label})
+	}
+
+	if len(list) == 0 {
+		// 如果没有数据则返回一个空的数组
+		return []models.BuyProfit{}, nil
+	}
+	return list, nil
+}
+func (dao *BuyDAO) GetProfitByWeek() ([]models.BuyProfit, error) {
+	rows, err := dao.db.Raw(`
+		SELECT monday, SUM(total_profit) FROM (
+			SELECT *,
+				WEEKDAY(created_at) AS weekday,
+				DATE_FORMAT(DATE_ADD(created_at, INTERVAL - (WEEKDAY(created_at) + 1) DAY),'%Y-%m-%d') AS monday
+			FROM buy
+		) AS x GROUP BY monday ORDER BY monday
+	`).Rows()
+
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var list []models.BuyProfit
+	for rows.Next() {
+		var label string
+		var value float64
+		if err := rows.Scan(&label, &value); err != nil {
+			return nil, err
+		}
+		list = append(list, models.BuyProfit{Value: value, Label: label})
+	}
+
+	if len(list) == 0 {
+		// 如果没有数据则返回一个空的数组
+		return []models.BuyProfit{}, nil
+	}
+	return list, nil
+}
+
+func (dao *BuyDAO) GetTotalProfit() (float64, error) {
+	var totalProfit float64
+	err := dao.db.Model(&models.Buy{}).Select("SUM(total_profit)").Pluck("SUM(total_profit)", &totalProfit).Error
+	if err != nil {
+		return 0, err
+	}
+	return totalProfit, nil
 }
 func (dao *BuyDAO) GetList(query *models.BuyListQuery) (*models.BuyListResponse, error) {
 	response := models.BuyListResponse{
@@ -54,6 +174,13 @@ func (dao *BuyDAO) GetList(query *models.BuyListQuery) (*models.BuyListResponse,
 	} else if inventorySorter == "desc" {
 		tx = tx.Order("inventory desc")
 	}
+	hasSoldSorter := query.HasSoldSorter
+	if hasSoldSorter == "asc" {
+		tx = tx.Order("has_sold asc")
+	} else if hasSoldSorter == "desc" {
+		tx = tx.Order("has_sold desc")
+	}
+
 	err = tx.Order("created_at desc").Offset(offset).Limit(query.PageSize).Find(&buyList).Error
 	if err != nil {
 		return nil, err

@@ -7,8 +7,6 @@ import (
 )
 
 type BuyService interface {
-	GetProfit(dType string) utils.ApiResponse
-	GetTotalProfit() utils.ApiResponse
 	GetList(query *models.BuyListQuery) utils.ApiResponse
 	GetItem(id uint64) utils.ApiResponse
 	Create(buy *models.Buy) utils.ApiResponse
@@ -23,22 +21,6 @@ type buyService struct {
 
 func NewBuyService(dao *dao.BuyDAO) *buyService {
 	return &buyService{dao}
-}
-
-func (s *buyService) GetProfit(dType string) utils.ApiResponse {
-	res, err := s.dao.GetProfit(dType)
-	if err != nil {
-		return utils.ApiErrorResponse(-1, err.Error())
-	}
-	return utils.ApiSuccessResponse(res)
-}
-
-func (s *buyService) GetTotalProfit() utils.ApiResponse {
-	res, err := s.dao.GetTotalProfit()
-	if err != nil {
-		return utils.ApiErrorResponse(-1, err.Error())
-	}
-	return utils.ApiSuccessResponse(res)
 }
 
 func (s *buyService) GetList(query *models.BuyListQuery) utils.ApiResponse {
@@ -62,6 +44,7 @@ func (s *buyService) GetItem(id uint64) utils.ApiResponse {
 }
 
 func (s *buyService) Create(buy *models.Buy) utils.ApiResponse {
+	buy.Inventory = buy.Quantity
 	buy.TotalAmount = buy.Price * float64(buy.Quantity)
 	buy, err := s.dao.Create(buy)
 	if err != nil {
@@ -87,13 +70,18 @@ func (s *buyService) Update(id uint64, buy *models.BuyUpdate) utils.ApiResponse 
 	}
 	if buyItem.HasSold == 0 {
 		buy.Inventory = buy.Quantity
+		buy.TotalAmount = buy.Price * float64(buy.Quantity)
 	} else {
 		// 已有卖出记录时
 		if buy.Quantity < buyItem.Inventory {
 			return utils.ApiErrorResponse(-1, "已有卖出记录，买入数量不能小于库存")
 		}
+		// 卖出数量 = 上次买入 - 上次库存
 		soldQuantity := buyItem.Quantity - buyItem.Inventory
+		// 当前库存 = 当前数量 - 卖出数量
 		buy.Inventory = buy.Quantity - soldQuantity
+		// 当前总计 = 上次总计 + 新增的金额
+		buy.TotalAmount = buyItem.TotalAmount + float64(buy.Quantity-buyItem.Quantity)*buy.Price
 	}
 	err = s.dao.Update(id, buy)
 	if err != nil {

@@ -18,17 +18,6 @@ func NewBuyController(service services.BuyService) *BuyController {
 	return &BuyController{service: service}
 }
 
-func (controller *BuyController) GetProfit(ctx *gin.Context) {
-	dType := ctx.Query("type")
-	res := controller.service.GetProfit(dType)
-	ctx.JSON(http.StatusOK, res)
-}
-
-func (controller *BuyController) GetTotalProfit(ctx *gin.Context) {
-	res := controller.service.GetTotalProfit()
-	ctx.JSON(http.StatusOK, res)
-}
-
 func (controller *BuyController) GetList(ctx *gin.Context) {
 	page, pageSize := utils.GetPaginationParams(ctx)
 	// 解析日期参数

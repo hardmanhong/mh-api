@@ -87,28 +87,6 @@ func (dao *StatisticsDAO) getProfitByDay() ([]models.Statistics, error) {
 	// 分组字段
 	// groupBy := groupByTimeDimension("day")
 
-	// buyRows, err := dao.db.Table("buy").
-	// 	Select(groupBy+" AS date, sum(total_profit) AS profit").
-	// 	Where("created_at BETWEEN ? AND ?", start, end).
-	// 	Group("date").
-	// 	Order("date").
-	// 	Rows()
-
-	// if err != nil {
-	// 	return nil, err
-	// }
-	// defer buyRows.Close()
-	// for buyRows.Next() {
-	// 	var day time.Time
-	// 	var value float64
-	// 	if err := buyRows.Scan(&day, &value); err != nil {
-	// 		return nil, err
-	// 	}
-	// 	// // 将日期转换为指定格式的字符串
-	// 	label := day.Format("2006-01-02")
-	// 	list = append(list, models.Statistics{Value: value, Label: label, Type: "buy"})
-	// }
-
 	// 构建日期范围
 	datess := make([]string, 0)
 	dates := make(map[string]bool)
@@ -199,35 +177,6 @@ func (dao *StatisticsDAO) getProfitByDay() ([]models.Statistics, error) {
 			Type:  "利润",
 		})
 	}
-	// for date, _ := range dates {
-	// 	buyAmount, ok := buyMap[date]
-	// 	if !ok {
-	// 		buyAmount = 0
-	// 	}
-	// 	list = append(list, models.Statistics{
-	// 		Label: date,
-	// 		Value: buyAmount,
-	// 		Type:  "买入",
-	// 	})
-	// 	sellAmount, ok := sellMap[date]
-	// 	if !ok {
-	// 		sellAmount = 0
-	// 	}
-	// 	list = append(list, models.Statistics{
-	// 		Label: date,
-	// 		Value: sellAmount,
-	// 		Type:  "卖出",
-	// 	})
-	// 	profit, ok := profitMap[date]
-	// 	if !ok {
-	// 		profit = 0
-	// 	}
-	// 	list = append(list, models.Statistics{
-	// 		Label: date,
-	// 		Value: profit,
-	// 		Type:  "利润",
-	// 	})
-	// }
 	// 按照 Label 排序
 	sort.Slice(list, func(i, j int) bool {
 		return list[i].Label < list[j].Label

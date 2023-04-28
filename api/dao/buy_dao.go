@@ -32,11 +32,8 @@ func (dao *BuyDAO) GetList(query *models.BuyListQuery) (*models.BuyListResponse,
 	var total int64
 	var buyList []models.Buy
 	tx := dao.db.Model(&models.Buy{}).Preload("Goods").Preload("Sales")
-	if query.CreatedAtFrom != nil {
-		tx = tx.Where("created_at >= ?", query.CreatedAtFrom)
-	}
-	if query.CreatedAtTo != nil {
-		tx = tx.Where("created_at <= ?", query.CreatedAtTo)
+	if query.CreatedAtFrom != nil && query.CreatedAtTo != nil {
+		tx = tx.Where("created_at between ? and ?", query.CreatedAtFrom, query.CreatedAtTo)
 	}
 	jsonData, _ := json.Marshal(query)
 	println("query", string(jsonData))

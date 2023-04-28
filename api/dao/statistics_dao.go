@@ -88,11 +88,9 @@ func (dao *StatisticsDAO) getProfitByDay() ([]models.Statistics, error) {
 	// groupBy := groupByTimeDimension("day")
 
 	// 构建日期范围
-	datess := make([]string, 0)
-	dates := make(map[string]bool)
+	dates := make([]string, 0)
 	for t := start; !t.After(end); t = t.AddDate(0, 0, 1) {
-		datess = append(datess, t.Format("2006-01-02"))
-		dates[t.Format("2006-01-02")] = true
+		dates = append(dates, t.Format("2006-01-02"))
 	}
 
 	buyRows, err := dao.db.Table("buy").
@@ -147,8 +145,8 @@ func (dao *StatisticsDAO) getProfitByDay() ([]models.Statistics, error) {
 	}
 
 	// 构建最终结果
-	for i := 0; i < len(datess); i++ {
-		date := datess[i]
+	for i := 0; i < len(dates); i++ {
+		date := dates[i]
 		buyAmount, ok := buyMap[date]
 		if !ok {
 			buyAmount = 0
@@ -190,6 +188,13 @@ func (dao *StatisticsDAO) getProfitByDay() ([]models.Statistics, error) {
 	return list, nil
 }
 func (dao *StatisticsDAO) getProfitByWeek() ([]models.Statistics, error) {
+	now := time.Now()
+	start, end := calculateDateRange(now, "day")
+	// 构建日期范围
+	dates := make([]string, 0)
+	for t := start; !t.After(end); t = t.AddDate(0, 0, 1) {
+		dates = append(dates, t.Format("2006-01-02"))
+	}
 	rows, err := dao.db.Raw(`
 		SELECT monday, SUM(total_profit) FROM (
 			SELECT *,

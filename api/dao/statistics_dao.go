@@ -95,7 +95,7 @@ func (dao *StatisticsDAO) getProfitByDay() ([]models.Statistics, error) {
 	}
 
 	buyRows, err := dao.db.Table("buy").
-		Select("DATE(created_at) AS date, SUM(total_amount) AS amount").
+		Select("created_at AS date, SUM(total_amount) AS amount").
 		Where("created_at BETWEEN ? AND ?", start, end).
 		Group("date").
 		Order("date").
@@ -119,7 +119,7 @@ func (dao *StatisticsDAO) getProfitByDay() ([]models.Statistics, error) {
 	}
 
 	sellRows, err := dao.db.Table("sell").
-		Select("DATE(created_at) AS date, SUM(price*quantity) AS amount, SUM(total_profit) AS total_profit").
+		Select("created_at AS date, SUM(price*quantity) AS amount, SUM(total_profit) AS total_profit").
 		Where("created_at BETWEEN ? AND ?", start, end).
 		Group("date").
 		Order("date").
@@ -310,7 +310,7 @@ func (dao *StatisticsDAO) getProfitByMonth() ([]models.Statistics, error) {
 		dates = append(dates, t.Format("2006-01"))
 	}
 	buyRows, err := dao.db.Table("buy").
-		Select("DATE(created_at) AS date, SUM(total_amount) AS amount").
+		Select("created_at AS date, SUM(total_amount) AS amount").
 		Where("created_at BETWEEN ? AND ?", start, end).
 		Group("date").
 		Order("date").
@@ -333,7 +333,7 @@ func (dao *StatisticsDAO) getProfitByMonth() ([]models.Statistics, error) {
 		buyMap[day.Format("2006-01")] = value
 	}
 	sellRows, err := dao.db.Table("sell").
-		Select("DATE(created_at) AS date, SUM(price*quantity) AS amount, SUM(total_profit) AS total_profit").
+		Select("created_at AS date, SUM(price*quantity) AS amount, SUM(total_profit) AS total_profit").
 		Where("created_at BETWEEN ? AND ?", start, end).
 		Group("date").
 		Order("date").
@@ -412,7 +412,7 @@ func (dao *StatisticsDAO) getProfitByYear() ([]models.Statistics, error) {
 		dates = append(dates, t.Format("2006"))
 	}
 	buyRows, err := dao.db.Table("buy").
-		Select("DATE(created_at) AS date, SUM(total_amount) AS amount").
+		Select("created_at AS date, SUM(total_amount) AS amount").
 		Where("created_at BETWEEN ? AND ?", start, end).
 		Group("date").
 		Order("date").
@@ -435,7 +435,7 @@ func (dao *StatisticsDAO) getProfitByYear() ([]models.Statistics, error) {
 		buyMap[day.Format("2006")] = value
 	}
 	sellRows, err := dao.db.Table("sell").
-		Select("DATE(created_at) AS date, SUM(price*quantity) AS amount, SUM(total_profit) AS total_profit").
+		Select("created_at AS date, SUM(price*quantity) AS amount, SUM(total_profit) AS total_profit").
 		Where("created_at BETWEEN ? AND ?", start, end).
 		Group("date").
 		Order("date").

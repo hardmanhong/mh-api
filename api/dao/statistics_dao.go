@@ -95,7 +95,7 @@ func (dao *StatisticsDAO) getProfitByDay() ([]models.Statistics, error) {
 	}
 
 	buyRows, err := dao.db.Table("buy").
-		Select("created_at AS date, SUM(total_amount) AS amount").
+		Select("DATE_FORMAT(created_at, '%Y-%m-%d') AS date, SUM(total_amount) AS amount").
 		Where("created_at BETWEEN ? AND ?", start, end).
 		Group("date").
 		Order("date").
@@ -110,16 +110,16 @@ func (dao *StatisticsDAO) getProfitByDay() ([]models.Statistics, error) {
 	buyMap := make(map[string]float64)
 
 	for buyRows.Next() {
-		var day time.Time
+		var day string
 		var value float64
 		if err := buyRows.Scan(&day, &value); err != nil {
 			return nil, err
 		}
-		buyMap[day.Format("2006-01-02")] = value
+		buyMap[day] = value
 	}
 
 	sellRows, err := dao.db.Table("sell").
-		Select("created_at AS date, SUM(price*quantity) AS amount, SUM(total_profit) AS total_profit").
+		Select("DATE_FORMAT(created_at, '%Y-%m-%d') AS date, SUM(price*quantity) AS amount, SUM(total_profit) AS total_profit").
 		Where("created_at BETWEEN ? AND ?", start, end).
 		Group("date").
 		Order("date").
@@ -134,15 +134,15 @@ func (dao *StatisticsDAO) getProfitByDay() ([]models.Statistics, error) {
 	sellMap := make(map[string]float64)
 	profitMap := make(map[string]float64)
 	for sellRows.Next() {
-		var day time.Time
+		var day string
 		var amount float64
 		var profit float64
 
 		if err := sellRows.Scan(&day, &amount, &profit); err != nil {
 			return nil, err
 		}
-		sellMap[day.Format("2006-01-02")] = amount
-		profitMap[day.Format("2006-01-02")] = profit
+		sellMap[day] = amount
+		profitMap[day] = profit
 	}
 
 	// 构建最终结果
@@ -204,7 +204,7 @@ func (dao *StatisticsDAO) getProfitByWeek() ([]models.Statistics, error) {
 	fmt.Println("dates", dates)
 
 	buyRows, err := dao.db.Table("buy").
-		Select("DATE_SUB(created_at, INTERVAL WEEKDAY(created_at) DAY) as monday, SUM(total_amount) AS amount").
+		Select("DATE_FORMAT(DATE_SUB(created_at, INTERVAL WEEKDAY(created_at) DAY),'%Y-%m-%d') as monday, SUM(total_amount) AS amount").
 		Where("created_at BETWEEN ? AND ?", start, end).
 		Group("monday").
 		Order("monday").
@@ -219,16 +219,16 @@ func (dao *StatisticsDAO) getProfitByWeek() ([]models.Statistics, error) {
 	buyMap := make(map[string]float64)
 
 	for buyRows.Next() {
-		var day time.Time
+		var day string
 		var value float64
 		if err := buyRows.Scan(&day, &value); err != nil {
 			return nil, err
 		}
-		buyMap[day.Format("2006-01-02")] = value
+		buyMap[day] = value
 	}
 
 	sellRows, err := dao.db.Table("sell").
-		Select("DATE_SUB(created_at, INTERVAL WEEKDAY(created_at) DAY) as monday, SUM(price*quantity) AS amount, SUM(total_profit) AS total_profit").
+		Select("DATE_FORMAT(DATE_SUB(created_at, INTERVAL WEEKDAY(created_at) DAY),'%Y-%m-%d') as monday, SUM(price*quantity) AS amount, SUM(total_profit) AS total_profit").
 		Where("created_at BETWEEN ? AND ?", start, end).
 		Group("monday").
 		Order("monday").
@@ -243,15 +243,15 @@ func (dao *StatisticsDAO) getProfitByWeek() ([]models.Statistics, error) {
 	sellMap := make(map[string]float64)
 	profitMap := make(map[string]float64)
 	for sellRows.Next() {
-		var day time.Time
+		var day string
 		var amount float64
 		var profit float64
 
 		if err := sellRows.Scan(&day, &amount, &profit); err != nil {
 			return nil, err
 		}
-		sellMap[day.Format("2006-01-02")] = amount
-		profitMap[day.Format("2006-01-02")] = profit
+		sellMap[day] = amount
+		profitMap[day] = profit
 	}
 
 	// 构建最终结果
@@ -306,11 +306,13 @@ func (dao *StatisticsDAO) getProfitByMonth() ([]models.Statistics, error) {
 	// groupBy := groupByTimeDimension("month")
 	// 构建日期范围
 	dates := make([]string, 0)
-	for t := start; !t.After(end); t = t.AddDate(0, 1, 0) {
+	for t := start; !t.After(end); t = t.AddDate(0, 1, -1) {
+		fmt.Println("t", t)
 		dates = append(dates, t.Format("2006-01"))
 	}
+	fmt.Println("dates", start, end, dates)
 	buyRows, err := dao.db.Table("buy").
-		Select("created_at AS date, SUM(total_amount) AS amount").
+		Select("DATE_FORMAT(created_at, '%Y-%m') AS date, SUM(total_amount) AS amount").
 		Where("created_at BETWEEN ? AND ?", start, end).
 		Group("date").
 		Order("date").
@@ -325,15 +327,15 @@ func (dao *StatisticsDAO) getProfitByMonth() ([]models.Statistics, error) {
 	buyMap := make(map[string]float64)
 
 	for buyRows.Next() {
-		var day time.Time
+		var day string
 		var value float64
 		if err := buyRows.Scan(&day, &value); err != nil {
 			return nil, err
 		}
-		buyMap[day.Format("2006-01")] = value
+		buyMap[day] = value
 	}
 	sellRows, err := dao.db.Table("sell").
-		Select("created_at AS date, SUM(price*quantity) AS amount, SUM(total_profit) AS total_profit").
+		Select("DATE_FORMAT(created_at, '%Y-%m') AS date, SUM(price*quantity) AS amount, SUM(total_profit) AS total_profit").
 		Where("created_at BETWEEN ? AND ?", start, end).
 		Group("date").
 		Order("date").
@@ -347,15 +349,15 @@ func (dao *StatisticsDAO) getProfitByMonth() ([]models.Statistics, error) {
 	sellMap := make(map[string]float64)
 	profitMap := make(map[string]float64)
 	for sellRows.Next() {
-		var day time.Time
+		var day string
 		var amount float64
 		var profit float64
 
 		if err := sellRows.Scan(&day, &amount, &profit); err != nil {
 			return nil, err
 		}
-		sellMap[day.Format("2006-01")] = amount
-		profitMap[day.Format("2006-01")] = profit
+		sellMap[day] = amount
+		profitMap[day] = profit
 	}
 	var list []models.Statistics
 	// 构建最终结果
@@ -412,7 +414,7 @@ func (dao *StatisticsDAO) getProfitByYear() ([]models.Statistics, error) {
 		dates = append(dates, t.Format("2006"))
 	}
 	buyRows, err := dao.db.Table("buy").
-		Select("created_at AS date, SUM(total_amount) AS amount").
+		Select("DATE_FORMAT(created_at, '%Y') AS date, SUM(total_amount) AS amount").
 		Where("created_at BETWEEN ? AND ?", start, end).
 		Group("date").
 		Order("date").
@@ -427,15 +429,15 @@ func (dao *StatisticsDAO) getProfitByYear() ([]models.Statistics, error) {
 	buyMap := make(map[string]float64)
 
 	for buyRows.Next() {
-		var day time.Time
+		var day string
 		var value float64
 		if err := buyRows.Scan(&day, &value); err != nil {
 			return nil, err
 		}
-		buyMap[day.Format("2006")] = value
+		buyMap[day] = value
 	}
 	sellRows, err := dao.db.Table("sell").
-		Select("created_at AS date, SUM(price*quantity) AS amount, SUM(total_profit) AS total_profit").
+		Select("DATE_FORMAT(created_at, '%Y') AS date, SUM(price*quantity) AS amount, SUM(total_profit) AS total_profit").
 		Where("created_at BETWEEN ? AND ?", start, end).
 		Group("date").
 		Order("date").
@@ -449,15 +451,15 @@ func (dao *StatisticsDAO) getProfitByYear() ([]models.Statistics, error) {
 	sellMap := make(map[string]float64)
 	profitMap := make(map[string]float64)
 	for sellRows.Next() {
-		var day time.Time
+		var day string
 		var amount float64
 		var profit float64
 
 		if err := sellRows.Scan(&day, &amount, &profit); err != nil {
 			return nil, err
 		}
-		sellMap[day.Format("2006")] = amount
-		profitMap[day.Format("2006")] = profit
+		sellMap[day] = amount
+		profitMap[day] = profit
 	}
 	var list []models.Statistics
 	// 构建最终结果

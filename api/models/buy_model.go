@@ -3,6 +3,7 @@ package models
 import "time"
 
 type Buy struct {
+	UserId      uint64
 	ID          uint64    `json:"id" gorm:"primaryKey"`
 	Price       float64   `json:"price" gorm:"type:decimal(10,2)"`
 	Quantity    int       `json:"quantity" gorm:"column:quantity"`

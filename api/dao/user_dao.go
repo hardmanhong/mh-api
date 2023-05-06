@@ -18,6 +18,14 @@ func NewUserDAO(db *gorm.DB) *UserDAO {
 func (dao *UserDAO) GetDB() *gorm.DB {
 	return dao.db
 }
+func (dao *UserDAO) ExistName(name string) (bool, error) {
+	var count int64
+	err := dao.db.Model(&models.User{}).Where("name = ?", name).Count(&count).Error
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
 func (dao *UserDAO) SignUp(user *models.User) (int, error) {
 	err := dao.db.Create(user).Error
 	if err != nil {
@@ -33,9 +41,16 @@ func (dao *UserDAO) Login(user *models.User) (bool, error) {
 	}
 	return count > 0, nil
 }
+func (dao *UserDAO) CreateUserToken(token *models.Token) error {
+	err := dao.db.Create(token).Error
+	if err != nil {
+		return err
+	}
+	return nil
+}
 func (dao *UserDAO) GetUser(name string) (*models.User, error) {
 	user := &models.User{}
-	err := dao.db.Where("name = ?", name).Preload("Sales").First(user).Error
+	err := dao.db.Where("name = ?", name).First(user).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, fmt.Errorf("user name=%s not found", name)
 	}

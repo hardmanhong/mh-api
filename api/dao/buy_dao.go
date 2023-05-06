@@ -21,7 +21,7 @@ func (dao *BuyDAO) GetDB() *gorm.DB {
 	return dao.db
 }
 
-func (dao *BuyDAO) GetList(query *models.BuyListQuery) (*models.BuyListResponse, error) {
+func (dao *BuyDAO) GetList(userId uint64, query *models.BuyListQuery) (*models.BuyListResponse, error) {
 	response := models.BuyListResponse{
 		TotalProfit: 0,
 		PaginationResponse: models.PaginationResponse{
@@ -40,7 +40,8 @@ func (dao *BuyDAO) GetList(query *models.BuyListQuery) (*models.BuyListResponse,
 	if len(query.GoodsIDs) > 0 {
 		tx = tx.Where("goods_id IN (?)", query.GoodsIDs)
 	}
-
+	println("userId11", userId)
+	tx = tx.Where("user_id = ?", userId)
 	err := tx.Count(&total).Error
 	if err != nil {
 		return nil, err

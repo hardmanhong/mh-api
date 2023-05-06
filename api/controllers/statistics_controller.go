@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"github.com/hardmanhong/api/services"
@@ -16,12 +17,22 @@ func NewStatisticsController(service services.StatisticsService) *statisticsCont
 }
 
 func (controller *statisticsController) GetStatistics(ctx *gin.Context) {
+	userID := ctx.GetString("userID")
+	userId, err := strconv.ParseUint(userID, 10, 64)
+	if err != nil {
+		userId = 0
+	}
 	dType := ctx.Query("type")
-	res := controller.service.GetStatistics(dType)
+	res := controller.service.GetStatistics(userId, dType)
 	ctx.JSON(http.StatusOK, res)
 }
 
 func (controller *statisticsController) GetTotalProfit(ctx *gin.Context) {
-	res := controller.service.GetTotalProfit()
+	userID := ctx.GetString("userID")
+	userId, err := strconv.ParseUint(userID, 10, 64)
+	if err != nil {
+		userId = 0
+	}
+	res := controller.service.GetTotalProfit(userId)
 	ctx.JSON(http.StatusOK, res)
 }

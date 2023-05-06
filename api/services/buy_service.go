@@ -7,9 +7,9 @@ import (
 )
 
 type BuyService interface {
-	GetList(query *models.BuyListQuery) utils.ApiResponse
+	GetList(userId uint64, query *models.BuyListQuery) utils.ApiResponse
 	GetItem(id uint64) utils.ApiResponse
-	Create(buy *models.Buy) utils.ApiResponse
+	Create(userId uint64, buy *models.Buy) utils.ApiResponse
 	Exists(id uint64) (bool, error)
 	Update(id uint64, buy *models.BuyUpdate) utils.ApiResponse
 	Delete(id uint64) utils.ApiResponse
@@ -23,8 +23,8 @@ func NewBuyService(dao *dao.BuyDAO) *buyService {
 	return &buyService{dao}
 }
 
-func (s *buyService) GetList(query *models.BuyListQuery) utils.ApiResponse {
-	res, err := s.dao.GetList(query)
+func (s *buyService) GetList(userId uint64, query *models.BuyListQuery) utils.ApiResponse {
+	res, err := s.dao.GetList(userId, query)
 	if err != nil {
 		return utils.ApiErrorResponse(-1, err.Error())
 	}
@@ -43,7 +43,8 @@ func (s *buyService) GetItem(id uint64) utils.ApiResponse {
 	return utils.ApiSuccessResponse(&item)
 }
 
-func (s *buyService) Create(buy *models.Buy) utils.ApiResponse {
+func (s *buyService) Create(userId uint64, buy *models.Buy) utils.ApiResponse {
+	buy.UserId = userId
 	buy.Inventory = buy.Quantity
 	buy.TotalAmount = buy.Price * float64(buy.Quantity)
 	buy, err := s.dao.Create(buy)

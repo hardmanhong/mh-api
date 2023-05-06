@@ -6,8 +6,8 @@ import (
 )
 
 type StatisticsService interface {
-	GetStatistics(dType string) utils.ApiResponse
-	GetTotalProfit() utils.ApiResponse
+	GetStatistics(userId uint64, dType string) utils.ApiResponse
+	GetTotalProfit(userId uint64) utils.ApiResponse
 }
 
 type statisticsService struct {
@@ -18,16 +18,16 @@ func NewStatisticsService(dao *dao.StatisticsDAO) *statisticsService {
 	return &statisticsService{dao}
 }
 
-func (s *statisticsService) GetStatistics(dType string) utils.ApiResponse {
-	res, err := s.dao.GetStatistics(dType)
+func (s *statisticsService) GetStatistics(userId uint64, dType string) utils.ApiResponse {
+	res, err := s.dao.GetStatistics(userId, dType)
 	if err != nil {
 		return utils.ApiErrorResponse(-1, err.Error())
 	}
 	return utils.ApiSuccessResponse(res)
 }
 
-func (s *statisticsService) GetTotalProfit() utils.ApiResponse {
-	res, err := s.dao.GetTotalProfit()
+func (s *statisticsService) GetTotalProfit(userId uint64) utils.ApiResponse {
+	res, err := s.dao.GetTotalProfit(userId)
 	if err != nil {
 		return utils.ApiErrorResponse(-1, err.Error())
 	}

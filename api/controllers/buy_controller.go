@@ -19,6 +19,7 @@ func NewBuyController(service services.BuyService) *BuyController {
 }
 
 func (controller *BuyController) GetList(ctx *gin.Context) {
+	userID := ctx.GetString("userID")
 	page, pageSize := utils.GetPaginationParams(ctx)
 	// 解析日期参数
 	createdAtFrom, createdAtTo := utils.ParseDate([2]string{"createdAtFrom", "createdAtTo"}, ctx.Request.URL.Query())
@@ -37,8 +38,11 @@ func (controller *BuyController) GetList(ctx *gin.Context) {
 	}
 	inventorySorter := ctx.Query("inventorySorter")
 	hasSoldSorter := ctx.Query("hasSoldSorter")
-
-	res := controller.service.GetList(&models.BuyListQuery{
+	userId, err := strconv.ParseUint(userID, 10, 64)
+	if err != nil {
+		userId = 0
+	}
+	res := controller.service.GetList(userId, &models.BuyListQuery{
 		CreatedAtFrom:   createdAtFrom,
 		CreatedAtTo:     createdAtTo,
 		GoodsIDs:        goodsIds,
@@ -69,13 +73,18 @@ func (controller *BuyController) GetItem(ctx *gin.Context) {
 func (controller *BuyController) Create(ctx *gin.Context) {
 	var buy models.Buy
 	err := ctx.ShouldBindJSON(&buy)
+	userID := ctx.GetString("userID")
+	userId, err := strconv.ParseUint(userID, 10, 64)
+	if err != nil {
+		userId = 0
+	}
 	if err != nil {
 		res := utils.ApiErrorResponse(-1, err.Error())
 		ctx.JSON(http.StatusOK, res)
 		return
 	}
 
-	res := controller.service.Create(&buy)
+	res := controller.service.Create(userId, &buy)
 	ctx.JSON(http.StatusOK, res)
 }
 

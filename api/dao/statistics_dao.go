@@ -1,6 +1,7 @@
 package dao
 
 import (
+	"database/sql"
 	"fmt"
 	"sort"
 	"time"
@@ -22,17 +23,20 @@ func (dao *StatisticsDAO) GetDB() *gorm.DB {
 
 // 计算时间范围
 func calculateDateRange(t time.Time, dType string) (time.Time, time.Time) {
+	start := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+	end := time.Date(t.Year(), t.Month(), t.Day(), 23, 59, 59, 0, t.Location())
+
 	switch dType {
 	case "day":
-		return t.AddDate(0, -1, 0), t
+		return start.AddDate(0, -1, 0), end
 	case "week":
-		return t.AddDate(0, 0, -30), t
+		return start.AddDate(0, 0, -30), end
 	case "month":
-		return t.AddDate(0, -5, 0), t
+		return start.AddDate(0, -5, 0), end
 	case "year":
-		return t.AddDate(-2, 0, 0), t
+		return start.AddDate(-2, 0, 0), end
 	default:
-		return t.AddDate(0, -1, 0), t
+		return start.AddDate(0, -1, 0), end
 	}
 }
 
@@ -51,15 +55,15 @@ func groupByTimeDimension(dType string) string {
 		return "DATE(created_at)"
 	}
 }
-func (dao *StatisticsDAO) GetStatistics(dType string) ([]models.Statistics, error) {
+func (dao *StatisticsDAO) GetStatistics(userId uint64, dType string) ([]models.Statistics, error) {
 	if dType == "day" {
-		return dao.getProfitByDay()
+		return dao.getProfitByDay(userId)
 	} else if dType == "week" {
-		return dao.getProfitByWeek()
+		return dao.getProfitByWeek(userId)
 	} else if dType == "month" {
-		return dao.getProfitByMonth()
+		return dao.getProfitByMonth(userId)
 	} else if dType == "year" {
-		return dao.getProfitByYear()
+		return dao.getProfitByYear(userId)
 	}
 	return []models.Statistics{}, nil
 
@@ -79,7 +83,7 @@ type BuyProfit struct {
 	Amount float64
 }
 
-func (dao *StatisticsDAO) getProfitByDay() ([]models.Statistics, error) {
+func (dao *StatisticsDAO) getProfitByDay(userId uint64) ([]models.Statistics, error) {
 	var list []models.Statistics
 	// 获取当前时间
 	now := time.Now()
@@ -96,6 +100,7 @@ func (dao *StatisticsDAO) getProfitByDay() ([]models.Statistics, error) {
 
 	buyRows, err := dao.db.Table("buy").
 		Select("DATE_FORMAT(created_at, '%Y-%m-%d') AS date, SUM(total_amount) AS amount").
+		Where("user_id = ?", userId).
 		Where("created_at BETWEEN ? AND ?", start, end).
 		Group("date").
 		Order("date").
@@ -118,9 +123,10 @@ func (dao *StatisticsDAO) getProfitByDay() ([]models.Statistics, error) {
 		buyMap[day] = value
 	}
 
-	sellRows, err := dao.db.Table("sell").
-		Select("DATE_FORMAT(created_at, '%Y-%m-%d') AS date, SUM(price*quantity) AS amount, SUM(total_profit) AS total_profit").
-		Where("created_at BETWEEN ? AND ?", start, end).
+	sellRows, err := dao.db.Table("sell, buy").
+		Select("DATE_FORMAT(sell.created_at, '%Y-%m-%d') AS date, SUM(sell.price*sell.quantity) AS amount, SUM(sell.total_profit) AS total_profit").
+		Where("buy.user_id = ? and sell.buy_id = buy.id", userId).
+		Where("sell.created_at BETWEEN ? AND ?", start, end).
 		Group("date").
 		Order("date").
 		Rows()
@@ -188,7 +194,7 @@ func (dao *StatisticsDAO) getProfitByDay() ([]models.Statistics, error) {
 
 	return list, nil
 }
-func (dao *StatisticsDAO) getProfitByWeek() ([]models.Statistics, error) {
+func (dao *StatisticsDAO) getProfitByWeek(userId uint64) ([]models.Statistics, error) {
 	var list []models.Statistics
 	// 获取当前时间
 	now := time.Now()
@@ -205,6 +211,7 @@ func (dao *StatisticsDAO) getProfitByWeek() ([]models.Statistics, error) {
 
 	buyRows, err := dao.db.Table("buy").
 		Select("DATE_FORMAT(DATE_SUB(created_at, INTERVAL WEEKDAY(created_at) DAY),'%Y-%m-%d') as monday, SUM(total_amount) AS amount").
+		Where("user_id = ?", userId).
 		Where("created_at BETWEEN ? AND ?", start, end).
 		Group("monday").
 		Order("monday").
@@ -227,9 +234,10 @@ func (dao *StatisticsDAO) getProfitByWeek() ([]models.Statistics, error) {
 		buyMap[day] = value
 	}
 
-	sellRows, err := dao.db.Table("sell").
-		Select("DATE_FORMAT(DATE_SUB(created_at, INTERVAL WEEKDAY(created_at) DAY),'%Y-%m-%d') as monday, SUM(price*quantity) AS amount, SUM(total_profit) AS total_profit").
-		Where("created_at BETWEEN ? AND ?", start, end).
+	sellRows, err := dao.db.Table("sell, buy").
+		Select("DATE_FORMAT(DATE_SUB(sell.created_at, INTERVAL WEEKDAY(sell.created_at) DAY),'%Y-%m-%d') as monday, SUM(sell.price*sell.quantity) AS amount, SUM(sell.total_profit) AS total_profit").
+		Where("buy.user_id = ? and sell.buy_id = buy.id", userId).
+		Where("sell.created_at BETWEEN ? AND ?", start, end).
 		Group("monday").
 		Order("monday").
 		Rows()
@@ -297,7 +305,7 @@ func (dao *StatisticsDAO) getProfitByWeek() ([]models.Statistics, error) {
 
 	return list, nil
 }
-func (dao *StatisticsDAO) getProfitByMonth() ([]models.Statistics, error) {
+func (dao *StatisticsDAO) getProfitByMonth(userId uint64) ([]models.Statistics, error) {
 	// 获取当前时间
 	now := time.Now()
 	// 计算时间范围
@@ -313,6 +321,7 @@ func (dao *StatisticsDAO) getProfitByMonth() ([]models.Statistics, error) {
 	fmt.Println("dates", start, end, dates)
 	buyRows, err := dao.db.Table("buy").
 		Select("DATE_FORMAT(created_at, '%Y-%m') AS date, SUM(total_amount) AS amount").
+		Where("user_id = ?", userId).
 		Where("created_at BETWEEN ? AND ?", start, end).
 		Group("date").
 		Order("date").
@@ -334,9 +343,10 @@ func (dao *StatisticsDAO) getProfitByMonth() ([]models.Statistics, error) {
 		}
 		buyMap[day] = value
 	}
-	sellRows, err := dao.db.Table("sell").
-		Select("DATE_FORMAT(created_at, '%Y-%m') AS date, SUM(price*quantity) AS amount, SUM(total_profit) AS total_profit").
-		Where("created_at BETWEEN ? AND ?", start, end).
+	sellRows, err := dao.db.Table("sell, buy").
+		Select("DATE_FORMAT(sell.created_at, '%Y-%m') AS date, SUM(sell.price*sell.quantity) AS amount, SUM(sell.total_profit) AS total_profit").
+		Where("buy.user_id = ? and sell.buy_id = buy.id", userId).
+		Where("sell.created_at BETWEEN ? AND ?", start, end).
 		Group("date").
 		Order("date").
 		Rows()
@@ -401,7 +411,7 @@ func (dao *StatisticsDAO) getProfitByMonth() ([]models.Statistics, error) {
 	}
 	return list, nil
 }
-func (dao *StatisticsDAO) getProfitByYear() ([]models.Statistics, error) {
+func (dao *StatisticsDAO) getProfitByYear(userId uint64) ([]models.Statistics, error) {
 	// 获取当前时间
 	now := time.Now()
 	// 计算时间范围
@@ -415,6 +425,7 @@ func (dao *StatisticsDAO) getProfitByYear() ([]models.Statistics, error) {
 	}
 	buyRows, err := dao.db.Table("buy").
 		Select("DATE_FORMAT(created_at, '%Y') AS date, SUM(total_amount) AS amount").
+		Where("user_id = ?", userId).
 		Where("created_at BETWEEN ? AND ?", start, end).
 		Group("date").
 		Order("date").
@@ -436,9 +447,10 @@ func (dao *StatisticsDAO) getProfitByYear() ([]models.Statistics, error) {
 		}
 		buyMap[day] = value
 	}
-	sellRows, err := dao.db.Table("sell").
-		Select("DATE_FORMAT(created_at, '%Y') AS date, SUM(price*quantity) AS amount, SUM(total_profit) AS total_profit").
-		Where("created_at BETWEEN ? AND ?", start, end).
+	sellRows, err := dao.db.Table("sell, buy").
+		Select("DATE_FORMAT(sell.created_at, '%Y') AS date, SUM(sell.price*sell.quantity) AS amount, SUM(sell.total_profit) AS total_profit").
+		Where("buy.user_id = ? and sell.buy_id = buy.id", userId).
+		Where("sell.created_at BETWEEN ? AND ?", start, end).
 		Group("date").
 		Order("date").
 		Rows()
@@ -503,11 +515,18 @@ func (dao *StatisticsDAO) getProfitByYear() ([]models.Statistics, error) {
 	}
 	return list, nil
 }
-func (dao *StatisticsDAO) GetTotalProfit() (float64, error) {
-	var totalProfit float64
-	err := dao.db.Model(&models.Buy{}).Select("SUM(total_profit)").Pluck("SUM(total_profit)", &totalProfit).Error
+func (dao *StatisticsDAO) GetTotalProfit(userId uint64) (float64, error) {
+	var totalProfit sql.NullFloat64
+	err := dao.db.Model(&models.Buy{}).
+		Select("SUM(total_profit)").
+		Where("user_id = ?", userId).
+		Scan(&totalProfit).Error
 	if err != nil {
 		return 0, err
 	}
-	return totalProfit, nil
+	if totalProfit.Valid {
+		return totalProfit.Float64, nil
+	}
+	return 0, nil
+
 }

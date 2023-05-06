@@ -21,18 +21,22 @@ USE `mh`;
 CREATE TABLE IF NOT EXISTS `buy` (
   `id` bigint unsigned NOT NULL AUTO_INCREMENT,
   `goods_id` bigint unsigned NOT NULL,
+  `user_id` bigint unsigned NOT NULL,
   `price` decimal(10,2) DEFAULT NULL,
   `quantity` int DEFAULT '0',
   `inventory` int DEFAULT '0',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `remark` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `total_profit` decimal(10,2) DEFAULT NULL COMMENT '总利润',
   `total_amount` decimal(10,2) DEFAULT NULL COMMENT '买入总金额',
+  `has_sold` tinyint NOT NULL DEFAULT '0',
   PRIMARY KEY (`id`),
+  KEY `fk_buy_user_id` (`user_id`),
   KEY `fk_goods_id` (`goods_id`),
+  CONSTRAINT `fk_buy_user_id` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_goods_id` FOREIGN KEY (`goods_id`) REFERENCES `goods` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=29 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 数据导出被取消选择。
 
@@ -45,7 +49,7 @@ CREATE TABLE IF NOT EXISTS `goods` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 数据导出被取消选择。
 
@@ -58,15 +62,42 @@ CREATE TABLE IF NOT EXISTS `sell` (
   `quantity` int NOT NULL DEFAULT '0' COMMENT '卖出数量',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  `remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
-  `profit` decimal(10,2) DEFAULT NULL,
-  `total_profit` decimal(10,2) DEFAULT NULL,
+  `remark` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `profit` decimal(10,2) DEFAULT NULL COMMENT '单个盈利',
+  `total_profit` decimal(10,2) DEFAULT NULL COMMENT '总盈利',
   PRIMARY KEY (`id`),
   KEY `fk_buy_id` (`buy_id`) USING BTREE,
   KEY `fk_sell_goods` (`goods_id`) USING BTREE,
-  CONSTRAINT `fk_buy_id` FOREIGN KEY (`buy_id`) REFERENCES `buy` (`id`),
+  CONSTRAINT `fk_buy_id` FOREIGN KEY (`buy_id`) REFERENCES `buy` (`id`) ON DELETE CASCADE,
   CONSTRAINT `fk_sell_goods` FOREIGN KEY (`goods_id`) REFERENCES `goods` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 数据导出被取消选择。
+
+-- 导出  表 mh.token 结构
+CREATE TABLE IF NOT EXISTS `token` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `user_id` bigint unsigned NOT NULL,
+  `token` varchar(32) NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `expire_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `fk_user_id` (`user_id`),
+  CONSTRAINT `fk_user_id` FOREIGN KEY (`user_id`) REFERENCES `user` (`id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+
+-- 数据导出被取消选择。
+
+-- 导出  表 mh.user 结构
+CREATE TABLE IF NOT EXISTS `user` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `password` varchar(32) NOT NULL,
+  `salt` varchar(16) NOT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
 
 -- 数据导出被取消选择。
 

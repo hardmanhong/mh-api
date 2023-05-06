@@ -2,6 +2,7 @@ package middlewares
 
 import (
 	"fmt"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -34,7 +35,7 @@ func Auth(db *gorm.DB) gin.HandlerFunc {
 			return
 		}
 		if time.Now().After(find.ExpireAt) {
-			c.AbortWithStatusJSON(-1, utils.ApiErrorResponse(-1, "凭证已过期，请重新登录"))
+			c.AbortWithStatusJSON(-1, utils.ApiErrorResponse(http.StatusUnauthorized, "凭证已过期，请重新登录"))
 			return
 		}
 

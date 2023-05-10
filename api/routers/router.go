@@ -11,4 +11,6 @@ func NewRouter(router *gin.RouterGroup, db *gorm.DB) {
 	NewBuyRouter(router, db)
 	NewSellRouter(router, db)
 	NewStatisticsRouter(router, db)
+	NewAccountRouter(router, db)
+	NewCharacterRouter(router, db)
 }

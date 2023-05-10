@@ -9,3 +9,7 @@ type PaginationResponse struct {
 	Total int64         `json:"total"`
 	List  []interface{} `json:"list"`
 }
+
+type ListResponse struct {
+	List []interface{} `json:"list"`
+}

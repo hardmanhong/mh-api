@@ -73,6 +73,11 @@ func (controller *BuyController) GetItem(ctx *gin.Context) {
 func (controller *BuyController) Create(ctx *gin.Context) {
 	var buy models.Buy
 	err := ctx.ShouldBindJSON(&buy)
+	if err != nil {
+		res := utils.ApiErrorResponse(-1, err.Error())
+		ctx.JSON(http.StatusOK, res)
+		return
+	}
 	userID := ctx.GetString("userID")
 	userId, err := strconv.ParseUint(userID, 10, 64)
 	if err != nil {

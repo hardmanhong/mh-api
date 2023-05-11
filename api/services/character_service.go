@@ -121,12 +121,22 @@ func (s *characterService) Update(id uint32, character *models.Character) utils.
 		tx.Rollback()
 		return utils.ApiErrorResponse(-1, err.Error())
 	}
-	err = s.equipmentDao.Update(find.Equipment.ID, &character.Equipment)
+	if find.Equipment.ID > 0 {
+		err = s.equipmentDao.Update(find.Equipment.ID, &character.Equipment)
+	} else {
+		character.Equipment.CharacterID = find.ID
+		_, err = s.equipmentDao.Create(&character.Equipment, tx)
+	}
 	if err != nil {
 		tx.Rollback()
 		return utils.ApiErrorResponse(-1, err.Error())
 	}
-	err = s.petDao.Update(find.Pet.ID, &character.Pet)
+	if find.Pet.ID > 0 {
+		err = s.petDao.Update(find.Pet.ID, &character.Pet)
+	} else {
+		character.Pet.CharacterID = find.ID
+		_, err = s.petDao.Create(&character.Pet, tx)
+	}
 	if err != nil {
 		tx.Rollback()
 		return utils.ApiErrorResponse(-1, err.Error())

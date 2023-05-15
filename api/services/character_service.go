@@ -75,7 +75,9 @@ func (s *characterService) Create(character *models.Character) utils.ApiResponse
 	// 	tx.Rollback()
 	// 	return utils.ApiErrorResponse(-1, err.Error())
 	// }
-	character.Pet.CharacterID = result.ID
+	for i := 0; i < len(character.Pets); i++ {
+		character.Pets[i].CharacterID = result.ID
+	}
 	// _, err = s.petDao.Create(&character.Pet, tx)
 	// if err != nil {
 	// 	tx.Rollback()
@@ -131,12 +133,16 @@ func (s *characterService) Update(id uint32, character *models.Character) utils.
 		tx.Rollback()
 		return utils.ApiErrorResponse(-1, err.Error())
 	}
-	if find.Pet.ID > 0 {
-		err = s.petDao.Update(find.Pet.ID, &character.Pet)
-	} else {
-		character.Pet.CharacterID = find.ID
-		_, err = s.petDao.Create(&character.Pet, tx)
+	for i := 0; i < len(character.Pets); i++ {
+		item := character.Pets[i]
+		if item.ID > 0 {
+			err = s.petDao.Update(item.ID, &item)
+		} else {
+			item.CharacterID = find.ID
+			_, err = s.petDao.Create(&item, tx)
+		}
 	}
+
 	if err != nil {
 		tx.Rollback()
 		return utils.ApiErrorResponse(-1, err.Error())

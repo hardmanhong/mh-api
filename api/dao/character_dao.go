@@ -26,7 +26,7 @@ func (dao *CharacterDAO) GetList() (*models.ListResponse, error) {
 	db := dao.db
 
 	var list []*models.Character
-	err := db.Model(&models.Character{}).Preload("Account").Preload("Equipment").Preload("Pet").Find(&list).Error
+	err := db.Model(&models.Character{}).Preload("Account").Preload("Equipment").Preload("Pets").Find(&list).Error
 	if err != nil {
 		return nil, err
 	}
@@ -39,7 +39,7 @@ func (dao *CharacterDAO) GetList() (*models.ListResponse, error) {
 }
 func (dao *CharacterDAO) GetItem(id uint32, tx *gorm.DB) (*models.Character, error) {
 	sell := &models.Character{}
-	err := tx.Where("id = ?", id).Preload("Account").Preload("Equipment").Preload("Pet").First(sell).Error
+	err := tx.Where("id = ?", id).Preload("Account").Preload("Equipment").Preload("Pets").First(sell).Error
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, fmt.Errorf("找不到该记录")
 	}
